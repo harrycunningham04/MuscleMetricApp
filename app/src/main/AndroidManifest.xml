@@ -23,6 +23,7 @@
         </activity>
 
         <activity android:name=".HomePage" android:exported="false" />
+        <activity android:name=".WorkoutActivity" android:exported="false" />
 
     </application>
 

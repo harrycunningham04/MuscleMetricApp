@@ -1,6 +1,8 @@
 package com.cunninghamharry.loginactivity
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -12,6 +14,7 @@ class HomePage : AppCompatActivity() {
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
         val pageTitle = findViewById<TextView>(R.id.pageTitle)
+        val btnLogout = findViewById<ImageButton>(R.id.btnLogout)
 
         // Load the default fragment
         supportFragmentManager.beginTransaction()
@@ -37,6 +40,13 @@ class HomePage : AppCompatActivity() {
                 }
                 else -> false
             }
+        }
+
+        // Handle logout button click
+        btnLogout.setOnClickListener {
+            val intent = Intent(this@HomePage, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK // Clears back stack
+            startActivity(intent)
         }
     }
 }
