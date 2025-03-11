@@ -93,6 +93,17 @@ class PlansFragment : Fragment() {
                     Exercise("Pull-ups", 3, 5, 10.0)
                 ),
                 isCompleted = false
+            ),
+            Workout(
+                id = 4,
+                title = "Full Body",
+                description = "Full-body compound exercises",
+                exercises = listOf(
+                    Exercise("Bench Press", 4, 8, 6.0),
+                    Exercise("Leg Press", 3, 6, 8.0),
+                    Exercise("Squats", 3, 5, 10.0)
+                ),
+                isCompleted = false
             )
         )
 
