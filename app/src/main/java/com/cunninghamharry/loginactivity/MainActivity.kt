@@ -29,11 +29,9 @@ class MainActivity : AppCompatActivity() {
            val password = passwordInput.text.toString()
             Log.i("Test Credentials", "Username: $username and Password: $password")
 
+            // Navigate to HomePage
+            val intent = Intent(this, HomePage::class.java)
+            startActivity(intent)
         }
-    }
-
-    fun goToActivity2(view: View?) {
-        val intent = Intent(this, HomePage::class.java)
-        startActivity(intent)
     }
 }
