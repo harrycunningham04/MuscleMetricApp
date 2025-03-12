@@ -1,7 +1,9 @@
 package com.cunninghamharry.loginactivity
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -20,6 +22,8 @@ class WorkoutActivity : AppCompatActivity() {
         val workoutName = intent.getStringExtra("workout_name") ?: "Workout"
         val exercises: ArrayList<Exercise> =
             intent.getParcelableArrayListExtra("exercises") ?: arrayListOf()
+        val addExerciseButton: Button = findViewById(R.id.addExerciseButton)
+        val completeWorkoutButton: Button = findViewById(R.id.completeWorkoutButton)
 
         // Set workout name
         val workoutTitle = findViewById<TextView>(R.id.workoutTitle)
@@ -41,6 +45,16 @@ class WorkoutActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = ExerciseAdapter(exercises)
         Log.d("WorkoutActivity", "Exercises received: $exercises")
+
+        addExerciseButton.setOnClickListener {
+            val intent = Intent(this, HomePage::class.java)
+            startActivity(intent)
+        }
+
+        completeWorkoutButton.setOnClickListener {
+            // Save workout logic
+            finish() // Go back to the previous screen
+        }
 
     }
 }
