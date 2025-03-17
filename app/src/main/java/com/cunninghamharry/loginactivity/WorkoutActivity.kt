@@ -12,6 +12,8 @@ import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.*
 
+private const val REQUEST_CODE = 1
+
 class WorkoutActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,8 +49,8 @@ class WorkoutActivity : AppCompatActivity() {
         Log.d("WorkoutActivity", "Exercises received: $exercises")
 
         addExerciseButton.setOnClickListener {
-            val intent = Intent(this, HomePage::class.java)
-            startActivity(intent)
+            val intent = Intent(this, ExerciseSearchActivity::class.java)
+            startActivityForResult(intent, REQUEST_CODE)
         }
 
         completeWorkoutButton.setOnClickListener {
@@ -56,5 +58,16 @@ class WorkoutActivity : AppCompatActivity() {
             finish() // Go back to the previous screen
         }
 
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            val newExercise = data?.getParcelableExtra<Exercise>("selected_exercise")
+            newExercise?.let {
+                exercises.add(it)
+                recyclerView.adapter?.notifyDataSetChanged()
+            }
+        }
     }
 }

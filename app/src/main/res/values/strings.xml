@@ -6,4 +6,5 @@
     <string name="login">Login</string>
     <string name="muscle_metric">Muscle Metric</string>
     <string name="muscle_metric_home_page">Muscle Metric Home Page</string>
+    <string name="exercise_details">%1$d sets • %2$d reps</string>
 </resources>

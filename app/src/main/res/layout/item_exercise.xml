@@ -6,32 +6,63 @@
     android:layout_height="wrap_content"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
-    android:layout_marginBottom="8dp"
-    android:padding="16dp">
+    android:layout_margin="8dp">
 
-    <TextView
-        android:id="@+id/exerciseName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Exercise Name"
-        android:textSize="18sp"
-        android:textStyle="bold"/>
-
-    <TextView
-        android:id="@+id/exerciseDetails"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="3 sets • 10 reps"
-        android:textSize="14sp"
-        android:textColor="#777"
-        android:layout_marginTop="4dp"/>
-
-    <!-- Expandable Details -->
-    <View
-        android:id="@+id/detailsContainer"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:background="#F5F5F5"
-        android:padding="8dp"/>
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <!-- Exercise Name & Details (Row Layout) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/exerciseName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Exercise Name"
+                android:textSize="20sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/exerciseDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="3 sets • 10 reps"
+                android:textSize="14sp"
+                android:textColor="#777"/>
+        </LinearLayout>
+
+        <!-- Expandable Details (Initially Hidden) -->
+        <LinearLayout
+            android:id="@+id/detailsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:background="#F5F5F5"
+            android:padding="8dp"
+            android:orientation="vertical">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/setRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"/>
+
+            <Button
+                android:id="@+id/addSetButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Add Set"
+                android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+    </LinearLayout>
+
 </com.google.android.material.card.MaterialCardView>
