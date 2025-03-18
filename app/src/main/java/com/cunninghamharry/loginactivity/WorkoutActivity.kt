@@ -15,6 +15,8 @@ import java.util.*
 private const val REQUEST_CODE = 1
 
 class WorkoutActivity : AppCompatActivity() {
+    private lateinit var exercises: ArrayList<Exercise>
+    private lateinit var recyclerView: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,8 +47,11 @@ class WorkoutActivity : AppCompatActivity() {
         // Setup RecyclerView for exercises
         val recyclerView = findViewById<RecyclerView>(R.id.exerciseList)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = ExerciseAdapter(exercises)
-        Log.d("WorkoutActivity", "Exercises received: $exercises")
+        recyclerView.adapter = ExerciseAdapter(
+            exercises
+        ) { selectedExercise ->
+            Log.d("WorkoutActivity", "Clicked on ${selectedExercise.name}")
+        }
 
         addExerciseButton.setOnClickListener {
             val intent = Intent(this, ExerciseSearchActivity::class.java)
@@ -62,11 +67,14 @@ class WorkoutActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-            val newExercise = data?.getParcelableExtra<Exercise>("selected_exercise")
-            newExercise?.let {
-                exercises.add(it)
-                recyclerView.adapter?.notifyDataSetChanged()
+        if (requestCode == REQUEST_CODE && resultCode == RESULT_OK) {
+            val newExerciseNew = data?.getParcelableExtra<ExerciseNew>("selected_exercise")
+            newExerciseNew?.let {
+                val convertedExercise = Exercise(
+                    name = it.name, sets = 1, reps = 8, weight = 0.0
+                )
+                exercises.add(convertedExercise)
+                findViewById<RecyclerView>(R.id.exerciseList).adapter?.notifyDataSetChanged()
             }
         }
     }
