@@ -1,5 +1,6 @@
 package com.cunninghamharry.loginactivity
 
+import ExerciseSearchAdapter
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle

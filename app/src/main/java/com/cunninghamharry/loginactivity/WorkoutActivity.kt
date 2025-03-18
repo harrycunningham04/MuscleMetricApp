@@ -24,8 +24,8 @@ class WorkoutActivity : AppCompatActivity() {
 
         // Retrieve passed data
         val workoutName = intent.getStringExtra("workout_name") ?: "Workout"
-        val exercises: ArrayList<Exercise> =
-            intent.getParcelableArrayListExtra("exercises") ?: arrayListOf()
+        exercises = intent.getParcelableArrayListExtra("exercises") ?: arrayListOf() // No 'val' here
+
         val addExerciseButton: Button = findViewById(R.id.addExerciseButton)
         val completeWorkoutButton: Button = findViewById(R.id.completeWorkoutButton)
 
@@ -35,9 +35,7 @@ class WorkoutActivity : AppCompatActivity() {
 
         // Back button
         val backButton = findViewById<ImageView>(R.id.backButton)
-        backButton.setOnClickListener {
-            finish()
-        }
+        backButton.setOnClickListener { finish() }
 
         // Set date
         val dateText = findViewById<TextView>(R.id.dateText)
@@ -45,11 +43,9 @@ class WorkoutActivity : AppCompatActivity() {
         dateText.text = "$currentDate • ${exercises.size} exercises"
 
         // Setup RecyclerView for exercises
-        val recyclerView = findViewById<RecyclerView>(R.id.exerciseList)
+        recyclerView = findViewById(R.id.exerciseList) // Assign to class-level variable
         recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = ExerciseAdapter(
-            exercises
-        ) { selectedExercise ->
+        recyclerView.adapter = ExerciseAdapter(exercises) { selectedExercise ->
             Log.d("WorkoutActivity", "Clicked on ${selectedExercise.name}")
         }
 
@@ -62,7 +58,6 @@ class WorkoutActivity : AppCompatActivity() {
             // Save workout logic
             finish() // Go back to the previous screen
         }
-
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -74,7 +69,7 @@ class WorkoutActivity : AppCompatActivity() {
                     name = it.name, sets = 1, reps = 8, weight = 0.0
                 )
                 exercises.add(convertedExercise)
-                findViewById<RecyclerView>(R.id.exerciseList).adapter?.notifyDataSetChanged()
+                recyclerView.adapter?.notifyDataSetChanged() // Use class-level recyclerView
             }
         }
     }

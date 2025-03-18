@@ -1,14 +1,14 @@
-package com.cunninghamharry.loginactivity
-
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.cunninghamharry.loginactivity.ExerciseNew
+import com.cunninghamharry.loginactivity.R
 
 class ExerciseSearchAdapter(
     private val exercises: List<ExerciseNew>,
-    private val onItemClick: (ExerciseNew) -> Unit
+    private val onExerciseSelected: (ExerciseNew) -> Unit // Function to send selected exercise
 ) : RecyclerView.Adapter<ExerciseSearchAdapter.ExerciseViewHolder>() {
 
     inner class ExerciseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -21,7 +21,8 @@ class ExerciseSearchAdapter(
             bodyPartText.text = "Target: ${exercise.bodyPart}"
             equipmentText.text = "Equipment: ${exercise.equipment}"
 
-            itemView.setOnClickListener { onItemClick(exercise) }
+            // Send the selected exercise to the parent activity
+            itemView.setOnClickListener { onExerciseSelected(exercise) }
         }
     }
 
