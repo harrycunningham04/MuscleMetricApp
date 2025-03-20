@@ -65,11 +65,23 @@ class WorkoutActivity : AppCompatActivity() {
         if (requestCode == REQUEST_CODE && resultCode == RESULT_OK) {
             val newExerciseNew = data?.getParcelableExtra<ExerciseNew>("selected_exercise")
             newExerciseNew?.let {
+                val defaultSets = 3 // You can modify this per exercise
+                val defaultReps = 10 // You can modify this per exercise
+
+                val sets = mutableListOf<SetModel>()
+                repeat(defaultSets) {
+                    sets.add(SetModel(weight = 0.0, reps = defaultReps))
+                }
+
                 val convertedExercise = Exercise(
-                    name = it.name, sets = 1, reps = 8, weight = 0.0
+                    name = it.name,
+                    sets = sets.size,
+                    reps = defaultReps,
+                    weight = 0.0
                 )
+
                 exercises.add(convertedExercise)
-                recyclerView.adapter?.notifyDataSetChanged() // Use class-level recyclerView
+                findViewById<RecyclerView>(R.id.exerciseList).adapter?.notifyDataSetChanged()
             }
         }
     }

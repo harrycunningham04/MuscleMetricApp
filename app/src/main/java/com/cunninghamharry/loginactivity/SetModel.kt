@@ -1,6 +1,6 @@
 package com.cunninghamharry.loginactivity
 
 data class SetModel(
-    var weight: Int,
+    var weight: Double,
     var reps: Int
 )

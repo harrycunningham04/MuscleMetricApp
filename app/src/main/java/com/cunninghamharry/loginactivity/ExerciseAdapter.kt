@@ -54,7 +54,7 @@ class ExerciseAdapter(    private val exercises: List<Exercise>,
 
         // Add set button logic
         holder.addSetButton.setOnClickListener {
-            holder.setList.add(SetModel(0, 8))  // Add new set
+            holder.setList.add(SetModel(0.0, 8))  // Add new set
             holder.setAdapter.notifyDataSetChanged()  // ✅ Correctly notify adapter
         }
     }
@@ -70,7 +70,7 @@ class ExerciseAdapter(    private val exercises: List<Exercise>,
         val addSetButton: Button = view.findViewById(R.id.addSetButton)
 
         // Define the list first
-        val setList: MutableList<SetModel> = mutableListOf(SetModel(0, 8), SetModel(0, 8), SetModel(0, 8))
+        val setList: MutableList<SetModel> = mutableListOf(SetModel(0.0, 8), SetModel(0.0, 8), SetModel(0.0, 8))
 
         // Initialize adapter after defining setList
         val setAdapter: SetAdapter = SetAdapter(setList) { pos ->
