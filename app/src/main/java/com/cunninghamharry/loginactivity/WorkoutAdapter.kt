@@ -14,7 +14,7 @@ class WorkoutAdapter(private val workouts: List<Workout>, private val onClick: (
     class WorkoutViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val title: TextView = view.findViewById(R.id.workoutTitle)
         val description: TextView = view.findViewById(R.id.workoutDescription)
-        val exerciseContainer: LinearLayout = view.findViewById(R.id.exerciseContainer) // <-- Add this
+        val exerciseContainer: LinearLayout = view.findViewById(R.id.exerciseContainer)
         val button: Button = view.findViewById(R.id.workoutButton)
     }
 
@@ -34,24 +34,29 @@ class WorkoutAdapter(private val workouts: List<Workout>, private val onClick: (
 
         workout.exercises.forEach { exercise ->
             val row = LinearLayout(holder.itemView.context).apply {
-                orientation = LinearLayout.HORIZONTAL
+                orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
+                setPadding(0, 8, 0, 8) // Add spacing between exercises
             }
 
             val exerciseName = TextView(holder.itemView.context).apply {
                 text = exercise.name
-                textSize = 14f
-                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                textSize = 16f
+                setTypeface(null, android.graphics.Typeface.BOLD) // Bold for the name
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             }
 
+            val totalSets = exercise.sets.size
+            val reps = exercise.sets.firstOrNull()?.reps ?: 0
+            val lastWeight = exercise.sets.lastOrNull()?.weight ?: 0.0
+
             val exerciseDetails = TextView(holder.itemView.context).apply {
-                text = "${exercise.sets} sets × ${exercise.reps} reps"
+                text = "$totalSets sets × $reps reps, Last weight: $lastWeight kg"
                 textSize = 14f
-                textAlignment = View.TEXT_ALIGNMENT_VIEW_END
-                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             }
 
             row.addView(exerciseName)
@@ -62,7 +67,7 @@ class WorkoutAdapter(private val workouts: List<Workout>, private val onClick: (
 
         if (workout.isCompleted) {
             holder.button.text = "✅"
-            holder.button.isEnabled = false // Disable button
+            holder.button.isEnabled = false // Disable button for completed workouts
         } else {
             holder.button.text = "Start Workout"
             holder.button.isEnabled = true
@@ -72,5 +77,3 @@ class WorkoutAdapter(private val workouts: List<Workout>, private val onClick: (
 
     override fun getItemCount() = workouts.size
 }
-
-

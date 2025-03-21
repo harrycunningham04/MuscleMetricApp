@@ -18,21 +18,43 @@ data class Workout(
     val description: String,
     val exercises: List<Exercise>,
     val isCompleted: Boolean
-)
+) : Parcelable {
+    constructor(parcel: Parcel) : this(
+        parcel.readInt(),
+        parcel.readString() ?: "",
+        parcel.readString() ?: "",
+        parcel.createTypedArrayList(Exercise) ?: emptyList(),
+        parcel.readByte() != 0.toByte()
+    )
 
-data class Exercise(val name: String, val sets: Int, val reps: Int, val weight: Double) : Parcelable {
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeInt(id)
+        parcel.writeString(title)
+        parcel.writeString(description)
+        parcel.writeTypedList(exercises)
+        parcel.writeByte(if (isCompleted) 1 else 0)
+    }
+
+    override fun describeContents(): Int = 0
+
+    companion object CREATOR : Parcelable.Creator<Workout> {
+        override fun createFromParcel(parcel: Parcel): Workout = Workout(parcel)
+        override fun newArray(size: Int): Array<Workout?> = arrayOfNulls(size)
+    }
+}
+
+data class Exercise(
+    val name: String,
+    val sets: MutableList<SetModel>
+) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString() ?: "",
-        parcel.readInt(),
-        parcel.readInt(),
-        parcel.readDouble()
+        parcel.createTypedArrayList(SetModel) ?: mutableListOf()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(name)
-        parcel.writeInt(sets)
-        parcel.writeInt(reps)
-        parcel.writeDouble(weight)
+        parcel.writeTypedList(sets)
     }
 
     override fun describeContents(): Int = 0
@@ -43,12 +65,33 @@ data class Exercise(val name: String, val sets: Int, val reps: Int, val weight: 
     }
 }
 
+data class SetModel(
+    var weight: Double,
+    var reps: Int
+) : Parcelable {
+    constructor(parcel: Parcel) : this(
+        parcel.readDouble(),
+        parcel.readInt()
+    )
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeDouble(weight)
+        parcel.writeInt(reps)
+    }
+
+    override fun describeContents(): Int = 0
+
+    companion object CREATOR : Parcelable.Creator<SetModel> {
+        override fun createFromParcel(parcel: Parcel): SetModel = SetModel(parcel)
+        override fun newArray(size: Int): Array<SetModel?> = arrayOfNulls(size)
+    }
+}
 
 class PlansFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var noWorkoutsText: TextView
     private lateinit var adapter: WorkoutAdapter
-    private var workouts: List<Workout> = listOf() // Replace with actual workout data
+    private var workouts: MutableList<Workout> = mutableListOf() // Changed to MutableList
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -59,16 +102,16 @@ class PlansFragment : Fragment() {
         recyclerView = view.findViewById(R.id.workoutRecyclerView)
         noWorkoutsText = view.findViewById(R.id.noWorkoutsText)
 
-        // Fake Workout Data
-        workouts = listOf(
+        // Sample Workouts
+        workouts = mutableListOf(
             Workout(
                 id = 1,
                 title = "Upper Body Focus",
                 description = "Chest, back, and arms workout",
                 exercises = listOf(
-                    Exercise("Bench Press", 4, 6, 8.0),
-                    Exercise("Pull-ups", 3, 5, 10.0),
-                    Exercise("Bicep Curls", 3, 12, 12.0)
+                    Exercise("Bench Press", mutableListOf(SetModel(8.0, 6), SetModel(8.5, 6))),
+                    Exercise("Pull-ups", mutableListOf(SetModel(10.0, 5), SetModel(10.5, 5))),
+                    Exercise("Bicep Curls", mutableListOf(SetModel(12.0, 12), SetModel(12.5, 12)))
                 ),
                 isCompleted = true
             ),
@@ -77,37 +120,15 @@ class PlansFragment : Fragment() {
                 title = "Leg Day",
                 description = "Legs and glutes workout",
                 exercises = listOf(
-                    Exercise("Squats", 4, 8, 10.0),
-                    Exercise("Lunges", 3, 12, 12.0),
-                    Exercise("Calf Raises", 3, 20, 15.0)
-                ),
-                isCompleted = false
-            ),
-            Workout(
-                id = 3,
-                title = "Full Body Strength",
-                description = "Full-body compound exercises",
-                exercises = listOf(
-                    Exercise("Deadlifts", 4, 8, 6.0),
-                    Exercise("Overhead Press", 3, 6, 8.0),
-                    Exercise("Pull-ups", 3, 5, 10.0)
-                ),
-                isCompleted = false
-            ),
-            Workout(
-                id = 4,
-                title = "Full Body",
-                description = "Full-body compound exercises",
-                exercises = listOf(
-                    Exercise("Bench Press", 4, 8, 6.0),
-                    Exercise("Leg Press", 3, 6, 8.0),
-                    Exercise("Squats", 3, 5, 10.0)
+                    Exercise("Squats", mutableListOf(SetModel(10.0, 8), SetModel(10.5, 8))),
+                    Exercise("Lunges", mutableListOf(SetModel(12.0, 12), SetModel(12.5, 12))),
+                    Exercise("Calf Raises", mutableListOf(SetModel(15.0, 20), SetModel(16.0, 20)))
                 ),
                 isCompleted = false
             )
         )
 
-        // Check if there are workouts
+        // Check if workouts exist
         if (workouts.isEmpty()) {
             noWorkoutsText.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
@@ -115,13 +136,15 @@ class PlansFragment : Fragment() {
             noWorkoutsText.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
             recyclerView.layoutManager = LinearLayoutManager(requireContext())
-            recyclerView.adapter = WorkoutAdapter(workouts) { workout ->
+
+            adapter = WorkoutAdapter(workouts) { workout ->
                 val intent = Intent(context, WorkoutActivity::class.java).apply {
                     putExtra("workout_name", workout.title)
                     putParcelableArrayListExtra("exercises", ArrayList(workout.exercises))
                 }
-                context?.startActivity(intent)
+                startActivity(intent)
             }
+            recyclerView.adapter = adapter
         }
 
         return view

@@ -1,5 +1,6 @@
 package com.cunninghamharry.loginactivity
 
+import SetAdapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,15 +10,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 
-class ExerciseAdapter(    private val exercises: List<Exercise>,
-                          private val onItemClick: (Exercise) -> Unit ) :
-    RecyclerView.Adapter<ExerciseAdapter.ExerciseViewHolder>() {
+class ExerciseAdapter(
+    private val exercises: MutableList<Exercise>,
+    private val onUpdate: () -> Unit
+) : RecyclerView.Adapter<ExerciseAdapter.ExerciseViewHolder>() {
 
-    private val expandedPositions = mutableSetOf<Int>()
-
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val nameTextView: TextView = view.findViewById(R.id.exerciseName)
-    }
+    private val expandedPositions = mutableSetOf<Int>() // Tracks expanded exercises
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ExerciseViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_exercise, parent, false)
@@ -27,11 +25,9 @@ class ExerciseAdapter(    private val exercises: List<Exercise>,
     override fun onBindViewHolder(holder: ExerciseViewHolder, position: Int) {
         val exercise = exercises[position]
 
-        // Use string resource instead of text concatenation
+        // Set exercise name and details
         holder.exerciseName.text = exercise.name
-        holder.exerciseDetails.text = holder.itemView.context.getString(
-            R.string.exercise_details, exercise.sets, exercise.reps
-        )
+        holder.exerciseDetails.text = "${exercise.sets.size} sets"
 
         // Expand/collapse logic
         val isExpanded = expandedPositions.contains(position)
@@ -43,19 +39,18 @@ class ExerciseAdapter(    private val exercises: List<Exercise>,
             } else {
                 expandedPositions.add(position)
             }
-            notifyItemChanged(position)
+            notifyItemChanged(position) // Smooth UI update
         }
 
-        // Ensure RecyclerView only initializes once
-        if (holder.setRecyclerView.adapter == null) {
-            holder.setRecyclerView.layoutManager = LinearLayoutManager(holder.itemView.context)
-            holder.setRecyclerView.adapter = holder.setAdapter
-        }
+        // Update SetAdapter with current exercise sets
+        holder.setAdapter.setSets(exercise.sets)
 
-        // Add set button logic
+        // Handle adding a new set
         holder.addSetButton.setOnClickListener {
-            holder.setList.add(SetModel(0.0, 8))  // Add new set
-            holder.setAdapter.notifyDataSetChanged()  // ✅ Correctly notify adapter
+            exercise.sets.add(SetModel(weight = 0.0, reps = 10)) // Default reps = 10
+            holder.setAdapter.notifyItemInserted(exercise.sets.size - 1) // Efficient update
+            notifyItemChanged(position) // Update main UI
+            onUpdate()
         }
     }
 
@@ -69,12 +64,14 @@ class ExerciseAdapter(    private val exercises: List<Exercise>,
         val setRecyclerView: RecyclerView = view.findViewById(R.id.setRecyclerView)
         val addSetButton: Button = view.findViewById(R.id.addSetButton)
 
-        // Define the list first
-        val setList: MutableList<SetModel> = mutableListOf(SetModel(0.0, 8), SetModel(0.0, 8), SetModel(0.0, 8))
+        val setAdapter: SetAdapter
 
-        // Initialize adapter after defining setList
-        val setAdapter: SetAdapter = SetAdapter(setList) { pos ->
-            setList.removeAt(pos)
+        init {
+            setRecyclerView.layoutManager = LinearLayoutManager(view.context)
+            setAdapter = SetAdapter(mutableListOf()) { pos ->
+                setAdapter.removeSet(pos)
+            }
+            setRecyclerView.adapter = setAdapter
         }
     }
 }
