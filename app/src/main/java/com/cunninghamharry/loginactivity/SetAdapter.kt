@@ -10,7 +10,7 @@ import com.cunninghamharry.loginactivity.SetModel
 
 class SetAdapter(
     private val sets: MutableList<SetModel>,
-    private val onDelete: (Int) -> Unit
+    var onDelete: (Int) -> Unit
 ) : RecyclerView.Adapter<SetAdapter.SetViewHolder>() {
 
     inner class SetViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -27,7 +27,7 @@ class SetAdapter(
 
     override fun onBindViewHolder(holder: SetViewHolder, position: Int) {
         val set = sets[position]
-        holder.setNumber.text = (position + 1).toString()
+        holder.setNumber.text = (position + 1).toString()  // Update set number
         holder.weightInput.setText(set.weight.toString())
         holder.repsInput.setText(set.reps.toString())
 
@@ -39,15 +39,16 @@ class SetAdapter(
 
     override fun getItemCount() = sets.size
 
-    // Function to remove a set
     fun removeSet(position: Int) {
         if (position in sets.indices) {
-            sets.removeAt(position)
-            notifyDataSetChanged()
+            sets.removeAt(position)  // Remove the set
+            notifyItemRemoved(position)  // Notify only the removed item
+            notifyItemRangeChanged(position, sets.size)  // Update remaining items' numbers
+
+            onDelete(position)  // 🔥 Notify the parent adapter (ExerciseAdapter) that something changed
         }
     }
 
-    // Function to set initial sets
     fun setSets(newSets: List<SetModel>) {
         sets.clear()
         sets.addAll(newSets)

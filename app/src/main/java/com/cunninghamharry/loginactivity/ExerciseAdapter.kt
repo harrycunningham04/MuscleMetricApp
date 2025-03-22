@@ -23,7 +23,7 @@ class ExerciseAdapter(
     }
 
     override fun onBindViewHolder(holder: ExerciseViewHolder, position: Int) {
-        val exercise = exercises[position]
+        val exercise = exercises[position]  // Get the current exercise
 
         // Set exercise name and details
         holder.exerciseName.text = exercise.name
@@ -45,12 +45,26 @@ class ExerciseAdapter(
         // Update SetAdapter with current exercise sets
         holder.setAdapter.setSets(exercise.sets)
 
-        // Handle adding a new set
+        // ✅ Correctly pass the delete function from here
+        holder.setAdapter.onDelete = { pos ->
+            if (pos in exercise.sets.indices) {
+                exercise.sets.removeAt(pos)  // Remove from the actual list
+                holder.exerciseDetails.text = "${exercise.sets.size} sets"  // Update UI count
+                notifyItemChanged(position) // Ensure UI updates
+                onUpdate()  // 🔥 Notify parent
+            }
+        }
+
         holder.addSetButton.setOnClickListener {
-            exercise.sets.add(SetModel(weight = 0.0, reps = 10)) // Default reps = 10
-            holder.setAdapter.notifyItemInserted(exercise.sets.size - 1) // Efficient update
-            notifyItemChanged(position) // Update main UI
-            onUpdate()
+            val newSet = SetModel(weight = 0.0, reps = 0)
+            exercise.sets.add(newSet)
+
+            // ✅ Notify set adapter that a new item was inserted
+            holder.setAdapter.setSets(exercise.sets) // Refresh the dataset
+            holder.setAdapter.notifyItemInserted(exercise.sets.size - 1)
+
+            holder.exerciseDetails.text = "${exercise.sets.size} sets"  // Update UI count
+            onUpdate() // 🔥 Ensure the adapter knows to update
         }
     }
 
@@ -64,13 +78,9 @@ class ExerciseAdapter(
         val setRecyclerView: RecyclerView = view.findViewById(R.id.setRecyclerView)
         val addSetButton: Button = view.findViewById(R.id.addSetButton)
 
-        val setAdapter: SetAdapter
-
+        val setAdapter = SetAdapter(mutableListOf()) {}  // Initialize without delete logic
         init {
             setRecyclerView.layoutManager = LinearLayoutManager(view.context)
-            setAdapter = SetAdapter(mutableListOf()) { pos ->
-                setAdapter.removeSet(pos)
-            }
             setRecyclerView.adapter = setAdapter
         }
     }

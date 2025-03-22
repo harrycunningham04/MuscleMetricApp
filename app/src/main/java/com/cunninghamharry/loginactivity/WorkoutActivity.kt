@@ -2,7 +2,6 @@ package com.cunninghamharry.loginactivity
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -82,11 +81,11 @@ class WorkoutActivity : AppCompatActivity() {
 
                 val convertedExercise = Exercise(
                     name = it.name,
-                    sets = sets, // ✅ Use the correct sets list
+                    sets = sets,
                 )
 
                 exercises.add(convertedExercise)
-                exerciseAdapter.notifyItemInserted(exercises.size - 1) // ✅ Efficient update
+                exerciseAdapter.notifyItemInserted(exercises.size - 1)
                 updateExerciseCount()
             }
         }
