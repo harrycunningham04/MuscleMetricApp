@@ -1,3 +1,5 @@
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,9 +29,28 @@ class SetAdapter(
 
     override fun onBindViewHolder(holder: SetViewHolder, position: Int) {
         val set = sets[position]
-        holder.setNumber.text = (position + 1).toString()  // Update set number
+        holder.setNumber.text = "Set ${position + 1}" // Show correct set number
+
+        // ✅ Ensure the EditText fields persist data
         holder.weightInput.setText(set.weight.toString())
         holder.repsInput.setText(set.reps.toString())
+
+        // ✅ Save user changes in real-time
+        holder.weightInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                set.weight = s.toString().toDoubleOrNull() ?: 0.0
+            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
+
+        holder.repsInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                set.reps = s.toString().toIntOrNull() ?: 0
+            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
 
         // Handle delete set
         holder.deleteButton.setOnClickListener {
@@ -41,15 +62,15 @@ class SetAdapter(
 
     fun removeSet(position: Int) {
         if (position in sets.indices) {
-            sets.removeAt(position)  // Remove the set
-            notifyItemRemoved(position)  // Notify only the removed item
-            notifyItemRangeChanged(position, sets.size)  // Update remaining items' numbers
+            sets.removeAt(position)
+            notifyItemRemoved(position)
+            notifyItemRangeChanged(position, sets.size)
 
-            onDelete(position)  // 🔥 Notify the parent adapter (ExerciseAdapter) that something changed
+            onDelete(position) // Notify ExerciseAdapter that a set was deleted
         }
     }
 
-    fun setSets(newSets: List<SetModel>) {
+    fun setSets(newSets: MutableList<SetModel>) {
         sets.clear()
         sets.addAll(newSets)
         notifyDataSetChanged()

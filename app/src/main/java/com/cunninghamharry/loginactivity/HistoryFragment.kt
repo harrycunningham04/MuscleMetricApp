@@ -33,6 +33,7 @@ class HistoryFragment : Fragment() {
             WorkoutHistory(
                 date = "Wed, Mar 12",
                 title = "Workout Plan 1",
+                duration = 60,
                 exercises = listOf(
                     ExerciseHistory("Bench Press", listOf(WorkoutSet(100, 8), WorkoutSet(100, 8), WorkoutSet(100, 8))),
                     ExerciseHistory("Pull-ups", listOf(WorkoutSet(5, 10), WorkoutSet(7, 10), WorkoutSet(7, 10))),
@@ -43,6 +44,7 @@ class HistoryFragment : Fragment() {
             WorkoutHistory(
                 date = "Tue, Mar 11",
                 title = "Workout Plan 2",
+                duration = 60,
                 exercises = listOf(
                     ExerciseHistory("Deadlift", listOf(WorkoutSet(120, 5), WorkoutSet(120, 5), WorkoutSet(120, 5))),
                     ExerciseHistory("Lat Pulldown", listOf(WorkoutSet(50, 10), WorkoutSet(55, 10), WorkoutSet(55, 10))),
@@ -52,6 +54,7 @@ class HistoryFragment : Fragment() {
             WorkoutHistory(
                 date = "Mon, Mar 10",
                 title = "Workout Plan 3",
+                duration = 60,
                 exercises = listOf(
                     ExerciseHistory("Squats", listOf(WorkoutSet(110, 8), WorkoutSet(110, 8), WorkoutSet(110, 8))),
                     ExerciseHistory("Leg Press", listOf(WorkoutSet(180, 12), WorkoutSet(190, 12), WorkoutSet(190, 12))),
@@ -61,6 +64,7 @@ class HistoryFragment : Fragment() {
             WorkoutHistory(
                 date = "Sun, Mar 9",
                 title = "Workout Plan 4",
+                duration = 60,
                 exercises = listOf(
                     ExerciseHistory("Overhead Press", listOf(WorkoutSet(50, 8), WorkoutSet(50, 8), WorkoutSet(50, 8))),
                     ExerciseHistory("Dips", listOf(WorkoutSet(10, 12), WorkoutSet(15, 12), WorkoutSet(15, 12))),
@@ -70,6 +74,7 @@ class HistoryFragment : Fragment() {
             WorkoutHistory(
                 date = "Sat, Mar 8",
                 title = "Workout Plan 5",
+                duration = 60,
                 exercises = listOf(
                     ExerciseHistory("Chest Fly", listOf(WorkoutSet(15, 12), WorkoutSet(15, 12), WorkoutSet(15, 12))),
                     ExerciseHistory("Lateral Raises", listOf(WorkoutSet(10, 12), WorkoutSet(12, 12), WorkoutSet(12, 12))),

@@ -23,13 +23,13 @@ class ExerciseAdapter(
     }
 
     override fun onBindViewHolder(holder: ExerciseViewHolder, position: Int) {
-        val exercise = exercises[position]  // Get the current exercise
+        val exercise = exercises[position] // Get the current exercise
 
         // Set exercise name and details
         holder.exerciseName.text = exercise.name
         holder.exerciseDetails.text = "${exercise.sets.size} sets"
 
-        // Expand/collapse logic
+        // Expand/collapse logic (keeps data when collapsing)
         val isExpanded = expandedPositions.contains(position)
         holder.detailsContainer.visibility = if (isExpanded) View.VISIBLE else View.GONE
 
@@ -42,29 +42,28 @@ class ExerciseAdapter(
             notifyItemChanged(position) // Smooth UI update
         }
 
-        // Update SetAdapter with current exercise sets
+        // ✅ Set adapter with the correct sets
         holder.setAdapter.setSets(exercise.sets)
 
-        // ✅ Correctly pass the delete function from here
+        // ✅ Pass delete function to SetAdapter
         holder.setAdapter.onDelete = { pos ->
             if (pos in exercise.sets.indices) {
-                exercise.sets.removeAt(pos)  // Remove from the actual list
-                holder.exerciseDetails.text = "${exercise.sets.size} sets"  // Update UI count
-                notifyItemChanged(position) // Ensure UI updates
-                onUpdate()  // 🔥 Notify parent
+                exercise.sets.removeAt(pos) // Remove from the actual list
+                holder.exerciseDetails.text = "${exercise.sets.size} sets" // Update UI count
+                notifyItemChanged(position)
+                onUpdate()
             }
         }
 
+        // ✅ Handle adding a new set
         holder.addSetButton.setOnClickListener {
             val newSet = SetModel(weight = 0.0, reps = 0)
             exercise.sets.add(newSet)
-
-            // ✅ Notify set adapter that a new item was inserted
-            holder.setAdapter.setSets(exercise.sets) // Refresh the dataset
+            holder.setAdapter.setSets(exercise.sets) // Refresh dataset
             holder.setAdapter.notifyItemInserted(exercise.sets.size - 1)
 
-            holder.exerciseDetails.text = "${exercise.sets.size} sets"  // Update UI count
-            onUpdate() // 🔥 Ensure the adapter knows to update
+            holder.exerciseDetails.text = "${exercise.sets.size} sets" // Update UI count
+            onUpdate()
         }
     }
 
@@ -78,7 +77,7 @@ class ExerciseAdapter(
         val setRecyclerView: RecyclerView = view.findViewById(R.id.setRecyclerView)
         val addSetButton: Button = view.findViewById(R.id.addSetButton)
 
-        val setAdapter = SetAdapter(mutableListOf()) {}  // Initialize without delete logic
+        val setAdapter = SetAdapter(mutableListOf()) {} // Initialize without delete logic
         init {
             setRecyclerView.layoutManager = LinearLayoutManager(view.context)
             setRecyclerView.adapter = setAdapter

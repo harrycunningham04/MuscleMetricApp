@@ -13,7 +13,8 @@ import com.google.android.flexbox.FlexWrap
 data class WorkoutHistory(
     val date: String,
     val title: String,
-    val exercises: List<ExerciseHistory>
+    val exercises: List<ExerciseHistory>,
+    val duration: Int
 )
 
 data class ExerciseHistory(
@@ -32,6 +33,7 @@ class WorkoutHistoryAdapter(private val workouts: List<WorkoutHistory>) :
     class HistoryViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val workoutDate: TextView = view.findViewById(R.id.workoutDate)
         val workoutTitle: TextView = view.findViewById(R.id.workoutTitle)
+        val workoutDuration: TextView = itemView.findViewById(R.id.workoutDuration)
         val exerciseContainer: LinearLayout = view.findViewById(R.id.exerciseContainer)
     }
 
@@ -45,6 +47,7 @@ class WorkoutHistoryAdapter(private val workouts: List<WorkoutHistory>) :
         val workout = workouts[position]
         holder.workoutDate.text = workout.date
         holder.workoutTitle.text = workout.title
+        holder.workoutDuration.text = "${workout.duration} min"
 
         // Clear previous views
         holder.exerciseContainer.removeAllViews()

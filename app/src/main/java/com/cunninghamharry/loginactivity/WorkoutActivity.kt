@@ -2,6 +2,8 @@ package com.cunninghamharry.loginactivity
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -19,6 +21,13 @@ class WorkoutActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var exerciseAdapter: ExerciseAdapter
 
+    // Timer Variables
+    private var workoutStartTime: Long = 0
+    private var isTimerRunning = false
+    private val handler = Handler(Looper.getMainLooper())
+    private lateinit var timerRunnable: Runnable
+    private lateinit var timerTextView: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_workout)
@@ -33,13 +42,19 @@ class WorkoutActivity : AppCompatActivity() {
 
         val addExerciseButton: Button = findViewById(R.id.addExerciseButton)
         val completeWorkoutButton: Button = findViewById(R.id.completeWorkoutButton)
+        val backButton = findViewById<ImageView>(R.id.backButton)
 
         // Set workout name
         val workoutTitle = findViewById<TextView>(R.id.workoutTitle)
         workoutTitle.text = workoutName
 
+        // Timer TextView
+        timerTextView = findViewById(R.id.timerText)
+
+        // Start Timer when activity opens
+        startTimer()
+
         // Back button
-        val backButton = findViewById<ImageView>(R.id.backButton)
         backButton.setOnClickListener { finish() }
 
         // Set date
@@ -61,9 +76,64 @@ class WorkoutActivity : AppCompatActivity() {
         }
 
         completeWorkoutButton.setOnClickListener {
-            // Save workout logic
-            finish() // Go back to the previous screen
+            stopTimer() // Stop and log workout
         }
+    }
+
+    // Start Timer
+    private fun startTimer() {
+        if (!isTimerRunning) {
+            workoutStartTime = System.currentTimeMillis()
+            isTimerRunning = true
+
+            timerRunnable = object : Runnable {
+                override fun run() {
+                    val elapsedTime = System.currentTimeMillis() - workoutStartTime
+                    val minutes = (elapsedTime / 1000) / 60
+                    val seconds = (elapsedTime / 1000) % 60
+                    timerTextView.text = String.format("%02d:%02d", minutes, seconds)
+
+                    handler.postDelayed(this, 1000) // Update every second
+                }
+            }
+
+            handler.post(timerRunnable) // Start timer
+        }
+    }
+
+    // Stop Timer and Log Workout
+    private fun stopTimer() {
+        if (isTimerRunning) {
+            handler.removeCallbacks(timerRunnable)
+            isTimerRunning = false
+
+            val elapsedTime = System.currentTimeMillis() - workoutStartTime
+            val minutes = (elapsedTime / 1000) / 60
+            val seconds = (elapsedTime / 1000) % 60
+            val duration = String.format("%02d:%02d", minutes, seconds)
+
+            logWorkout(duration) // Save workout log
+        }
+    }
+
+    // Log Workout
+    private fun logWorkout(duration: String) {
+        val workoutLog = StringBuilder()
+        workoutLog.append("Workout Name: ${findViewById<TextView>(R.id.workoutTitle).text}\n")
+        workoutLog.append("Date: ${findViewById<TextView>(R.id.dateText).text}\n")
+        workoutLog.append("Duration: $duration\n")
+        workoutLog.append("Exercises:\n")
+
+        for (exercise in exercises) {
+            workoutLog.append("  - ${exercise.name}:\n")
+            for ((index, set) in exercise.sets.withIndex()) {
+                workoutLog.append("    Set ${index + 1}: ${set.weight} kg x ${set.reps} reps\n")
+            }
+        }
+
+        // Save the log (this could be to a database, file, or shared preferences)
+        println(workoutLog.toString()) // Replace with actual logging mechanism
+        finish() // Exit workout screen
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
