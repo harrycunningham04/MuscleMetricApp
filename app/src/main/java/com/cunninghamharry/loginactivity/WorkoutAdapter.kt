@@ -6,9 +6,10 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 
-class WorkoutAdapter(private val workouts: List<Workout>, private val onClick: (Workout) -> Unit) :
+class WorkoutAdapter(private var workouts: List<Workout>, private val onClick: (Workout) -> Unit) :
     RecyclerView.Adapter<WorkoutAdapter.WorkoutViewHolder>() {
 
     class WorkoutViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -23,11 +24,15 @@ class WorkoutAdapter(private val workouts: List<Workout>, private val onClick: (
         return WorkoutViewHolder(view)
     }
 
+    fun updateWorkouts(newWorkouts: List<Workout>) {
+        this.workouts = newWorkouts
+        notifyDataSetChanged()
+    }
+
     override fun onBindViewHolder(holder: WorkoutViewHolder, position: Int) {
         val workout = workouts[position]
 
         holder.title.text = workout.title
-        holder.description.text = workout.description
 
         // Clear previous views to prevent duplication
         holder.exerciseContainer.removeAllViews()
@@ -65,15 +70,20 @@ class WorkoutAdapter(private val workouts: List<Workout>, private val onClick: (
             holder.exerciseContainer.addView(row)
         }
 
+        // Handle workout completion state
         if (workout.isCompleted) {
+            holder.itemView.setBackgroundColor(ContextCompat.getColor(holder.itemView.context, R.color.light_green))
             holder.button.text = "✅"
-            holder.button.isEnabled = false // Disable button for completed workouts
+            holder.button.isEnabled = false
+            holder.button.setOnClickListener(null)
         } else {
+            holder.itemView.setBackgroundColor(ContextCompat.getColor(holder.itemView.context, R.color.default_background))
             holder.button.text = "Start Workout"
             holder.button.isEnabled = true
             holder.button.setOnClickListener { onClick(workout) }
         }
     }
+
 
     override fun getItemCount() = workouts.size
 }

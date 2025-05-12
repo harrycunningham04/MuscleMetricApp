@@ -11,17 +11,21 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.android.volley.Request
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
 
 data class Workout(
     val id: Int,
     val title: String,
-    val description: String,
     val exercises: List<Exercise>,
     val isCompleted: Boolean
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readInt(),
-        parcel.readString() ?: "",
         parcel.readString() ?: "",
         parcel.createTypedArrayList(Exercise) ?: emptyList(),
         parcel.readByte() != 0.toByte()
@@ -30,7 +34,6 @@ data class Workout(
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeInt(id)
         parcel.writeString(title)
-        parcel.writeString(description)
         parcel.writeTypedList(exercises)
         parcel.writeByte(if (isCompleted) 1 else 0)
     }
@@ -42,6 +45,13 @@ data class Workout(
         override fun newArray(size: Int): Array<Workout?> = arrayOfNulls(size)
     }
 }
+
+
+data class Plan(
+    val id: Int,
+    val title: String,
+    val workouts: List<Workout>
+)
 
 data class Exercise(
     val name: String,
@@ -101,52 +111,109 @@ class PlansFragment : Fragment() {
 
         recyclerView = view.findViewById(R.id.workoutRecyclerView)
         noWorkoutsText = view.findViewById(R.id.noWorkoutsText)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        // Sample Workouts
-        workouts = mutableListOf(
-            Workout(
-                id = 1,
-                title = "Upper Body Focus",
-                description = "Chest, back, and arms workout",
-                exercises = listOf(
-                    Exercise("Bench Press", mutableListOf(SetModel(8.0, 6), SetModel(8.5, 6))),
-                    Exercise("Pull-ups", mutableListOf(SetModel(10.0, 5), SetModel(10.5, 5))),
-                    Exercise("Bicep Curls", mutableListOf(SetModel(12.0, 12), SetModel(12.5, 12)))
-                ),
-                isCompleted = true
-            ),
-            Workout(
-                id = 2,
-                title = "Leg Day",
-                description = "Legs and glutes workout",
-                exercises = listOf(
-                    Exercise("Squats", mutableListOf(SetModel(10.0, 8), SetModel(10.5, 8))),
-                    Exercise("Lunges", mutableListOf(SetModel(12.0, 12), SetModel(12.5, 12))),
-                    Exercise("Calf Raises", mutableListOf(SetModel(15.0, 20), SetModel(16.0, 20)))
-                ),
-                isCompleted = false
-            )
-        )
-
-        // Check if workouts exist
-        if (workouts.isEmpty()) {
-            noWorkoutsText.visibility = View.VISIBLE
-            recyclerView.visibility = View.GONE
-        } else {
-            noWorkoutsText.visibility = View.GONE
-            recyclerView.visibility = View.VISIBLE
-            recyclerView.layoutManager = LinearLayoutManager(requireContext())
-
-            adapter = WorkoutAdapter(workouts) { workout ->
-                val intent = Intent(context, WorkoutActivity::class.java).apply {
-                    putExtra("workout_name", workout.title)
-                    putParcelableArrayListExtra("exercises", ArrayList(workout.exercises))
-                }
-                startActivity(intent)
+        adapter = WorkoutAdapter(workouts) { workout ->
+            val intent = Intent(context, WorkoutActivity::class.java).apply {
+                putExtra("workout_name", workout.title)
+                putParcelableArrayListExtra("exercises", ArrayList(workout.exercises))
             }
-            recyclerView.adapter = adapter
+            startActivity(intent)
         }
+        recyclerView.adapter = adapter
+
+        fetchPlans()
 
         return view
     }
+
+    private fun fetchPlans() {
+        val url = "https://hc920.brighton.domains/muscleMetric/php/workout/workout.php?user_id=4"
+        val requestQueue = Volley.newRequestQueue(requireContext())
+
+        val request = JsonObjectRequest(
+            Request.Method.GET, url, null,
+            { response ->
+                try {
+                    val workoutsArray = response.getJSONArray("workouts")
+                    val parsedWorkouts = parsePlans(workoutsArray)
+                    workouts.clear()
+                    workouts.addAll(parsedWorkouts)
+                    adapter.notifyDataSetChanged()
+
+                    noWorkoutsText.visibility = if (workouts.isEmpty()) View.VISIBLE else View.GONE
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            },
+            { error ->
+                error.printStackTrace()
+            }
+        )
+
+        requestQueue.add(request)
+    }
+
+    fun parsePlans(workoutsArray: JSONArray): List<Workout> {
+        val workouts = mutableListOf<Workout>()
+        try {
+            for (i in 0 until workoutsArray.length()) {
+                val workoutObject = workoutsArray.getJSONObject(i) // Access the objects in the array
+
+                val workout = Workout(
+                    id = workoutObject.getInt("id"),
+                    title = workoutObject.getString("Name"),
+                    exercises = parseExercises(workoutObject),
+                    isCompleted = workoutObject.optInt("Completed", 0) == 1
+                )
+
+                workouts.add(workout)
+            }
+        } catch (e: JSONException) {
+            e.printStackTrace()
+        }
+        return workouts
+    }
+
+    fun parseExercises(workoutObject: JSONObject): List<Exercise> {
+        val exercises = mutableListOf<Exercise>()
+        try {
+            val exercisesArray = workoutObject.optJSONArray("exercises") ?: JSONArray()
+            for (k in 0 until exercisesArray.length()) {
+                val exerciseObject = exercisesArray.getJSONObject(k)
+
+                val exercise = Exercise(
+                    name = exerciseObject.getString("Name"),
+                    sets = parseSets(exerciseObject)
+                )
+
+                exercises.add(exercise)
+            }
+        } catch (e: JSONException) {
+            e.printStackTrace()
+        }
+        return exercises
+    }
+
+    fun parseSets(exerciseObject: JSONObject): MutableList<SetModel> {
+        val sets = mutableListOf<SetModel>()
+        try {
+            val setsArray = exerciseObject.optJSONArray("sets") ?: JSONArray()
+            for (l in 0 until setsArray.length()) {
+                val setObject = setsArray.getJSONObject(l)
+
+                val set = SetModel(
+                    weight = setObject.getDouble("weight"),
+                    reps = setObject.getInt("reps")
+                )
+
+                sets.add(set)
+            }
+        } catch (e: JSONException) {
+            e.printStackTrace()
+        }
+        return sets
+    }
+
+
 }
