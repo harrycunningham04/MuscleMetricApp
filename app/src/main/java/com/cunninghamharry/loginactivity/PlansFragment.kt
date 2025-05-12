@@ -91,7 +91,7 @@ class PlansFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var noWorkoutsText: TextView
     private lateinit var adapter: WorkoutAdapter
-    private var workouts: MutableList<Workout> = mutableListOf() // Changed to MutableList
+    private var workouts: MutableList<Workout> = mutableListOf()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

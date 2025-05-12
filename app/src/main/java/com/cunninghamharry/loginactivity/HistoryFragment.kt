@@ -6,11 +6,14 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.android.volley.Request
+import com.android.volley.toolbox.JsonArrayRequest
+import com.android.volley.toolbox.Volley
 import com.cunninghamharry.loginactivity.ExerciseHistory
 import com.cunninghamharry.loginactivity.R
 import com.cunninghamharry.loginactivity.WorkoutHistory
 import com.cunninghamharry.loginactivity.WorkoutHistoryAdapter
-import com.cunninghamharry.loginactivity.WorkoutSet
+import org.json.JSONArray
 
 class HistoryFragment : Fragment() {
 
@@ -28,75 +31,72 @@ class HistoryFragment : Fragment() {
         emptyMessage = view.findViewById(R.id.emptyMessage)
         historyRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        // Mock Data
-       val historyList = listOf(
-            WorkoutHistory(
-                date = "Wed, Mar 12",
-                title = "Workout Plan 1",
-                duration = 60,
-                exercises = listOf(
-                    ExerciseHistory("Bench Press", listOf(WorkoutSet(100, 8), WorkoutSet(100, 8), WorkoutSet(100, 8))),
-                    ExerciseHistory("Pull-ups", listOf(WorkoutSet(5, 10), WorkoutSet(7, 10), WorkoutSet(7, 10))),
-                    ExerciseHistory("Bicep Curls", listOf(WorkoutSet(18, 12), WorkoutSet(18, 12), WorkoutSet(18, 12))),
-                    ExerciseHistory("Tricep Extension", listOf(WorkoutSet(30, 12), WorkoutSet(30, 12), WorkoutSet(30, 12)))
-                )
-            ),
-            WorkoutHistory(
-                date = "Tue, Mar 11",
-                title = "Workout Plan 2",
-                duration = 60,
-                exercises = listOf(
-                    ExerciseHistory("Deadlift", listOf(WorkoutSet(120, 5), WorkoutSet(120, 5), WorkoutSet(120, 5))),
-                    ExerciseHistory("Lat Pulldown", listOf(WorkoutSet(50, 10), WorkoutSet(55, 10), WorkoutSet(55, 10))),
-                    ExerciseHistory("Hammer Curls", listOf(WorkoutSet(20, 10), WorkoutSet(20, 10), WorkoutSet(20, 10)))
-                )
-            ),
-            WorkoutHistory(
-                date = "Mon, Mar 10",
-                title = "Workout Plan 3",
-                duration = 60,
-                exercises = listOf(
-                    ExerciseHistory("Squats", listOf(WorkoutSet(110, 8), WorkoutSet(110, 8), WorkoutSet(110, 8))),
-                    ExerciseHistory("Leg Press", listOf(WorkoutSet(180, 12), WorkoutSet(190, 12), WorkoutSet(190, 12))),
-                    ExerciseHistory("Calf Raises", listOf(WorkoutSet(40, 15), WorkoutSet(40, 15), WorkoutSet(40, 15)))
-                )
-            ),
-            WorkoutHistory(
-                date = "Sun, Mar 9",
-                title = "Workout Plan 4",
-                duration = 60,
-                exercises = listOf(
-                    ExerciseHistory("Overhead Press", listOf(WorkoutSet(50, 8), WorkoutSet(50, 8), WorkoutSet(50, 8))),
-                    ExerciseHistory("Dips", listOf(WorkoutSet(10, 12), WorkoutSet(15, 12), WorkoutSet(15, 12))),
-                    ExerciseHistory("Face Pulls", listOf(WorkoutSet(25, 15), WorkoutSet(25, 15), WorkoutSet(25, 15)))
-                )
-            ),
-            WorkoutHistory(
-                date = "Sat, Mar 8",
-                title = "Workout Plan 5",
-                duration = 60,
-                exercises = listOf(
-                    ExerciseHistory("Chest Fly", listOf(WorkoutSet(15, 12), WorkoutSet(15, 12), WorkoutSet(15, 12))),
-                    ExerciseHistory("Lateral Raises", listOf(WorkoutSet(10, 12), WorkoutSet(12, 12), WorkoutSet(12, 12))),
-                    ExerciseHistory("Rear Delt Fly", listOf(WorkoutSet(12, 12), WorkoutSet(12, 12), WorkoutSet(12, 12)))
-                )
-            )
-        )
-
-        historyAdapter = WorkoutHistoryAdapter(historyList)
-        historyRecyclerView.adapter = historyAdapter
-
-        if (historyList.isEmpty()) {
-            emptyMessage.visibility = View.VISIBLE
-            historyRecyclerView.visibility = View.GONE
-        } else {
-            emptyMessage.visibility = View.GONE
-            historyRecyclerView.visibility = View.VISIBLE
-
-            historyAdapter = WorkoutHistoryAdapter(historyList)
-            historyRecyclerView.adapter = historyAdapter
-        }
+        fetchWorkoutHistory()
 
         return view
     }
+
+    private fun fetchWorkoutHistory() {
+        val url = "https://hc920.brighton.domains/muscleMetric/php/history/history.php?user_id=4"
+
+        val requestQueue = Volley.newRequestQueue(requireContext())
+
+        val jsonArrayRequest = JsonArrayRequest(
+            Request.Method.GET, url, null,
+            { response: JSONArray ->
+                val historyList = parseWorkoutHistory(response)
+                if (historyList.isEmpty()) {
+                    emptyMessage.visibility = View.VISIBLE
+                    historyRecyclerView.visibility = View.GONE
+                } else {
+                    emptyMessage.visibility = View.GONE
+                    historyRecyclerView.visibility = View.VISIBLE
+                    historyAdapter = WorkoutHistoryAdapter(historyList)
+                    historyRecyclerView.adapter = historyAdapter
+                }
+            },
+            { error ->
+                emptyMessage.text = "Failed to load data."
+                emptyMessage.visibility = View.VISIBLE
+                historyRecyclerView.visibility = View.GONE
+                error.printStackTrace()
+            }
+        )
+
+        requestQueue.add(jsonArrayRequest)
+    }
+
+    private fun parseWorkoutHistory(jsonArray: JSONArray): List<WorkoutHistory> {
+        val historyList = mutableListOf<WorkoutHistory>()
+
+        for (i in 0 until jsonArray.length()) {
+            val obj = jsonArray.getJSONObject(i)
+
+            val date = obj.getString("date")
+            val workoutName = obj.getString("workoutName") // Updated to match JSON field
+            val duration = obj.getString("duration") // Duration is a string, so treat it as such
+
+            val exercisesJson = obj.getJSONArray("exercises")
+            val exerciseCountMap = mutableMapOf<String, Int>()
+
+            // Count the occurrences of each exercise name
+            for (j in 0 until exercisesJson.length()) {
+                val exerciseName = exercisesJson.getString(j)
+                exerciseCountMap[exerciseName] = exerciseCountMap.getOrDefault(exerciseName, 0) + 1
+            }
+
+            // Convert the map into a list of ExerciseHistory objects
+            val exercises = exerciseCountMap.map { (name, count) ->
+                ExerciseHistory(name, count)
+            }
+
+            // Add the parsed workout data to the history list
+            historyList.add(WorkoutHistory(date, workoutName, exercises, duration))
+        }
+
+        // Sort the history list by date (most recent first)
+        return historyList.sortedByDescending { it.date }
+    }
+
+
 }

@@ -14,12 +14,12 @@ data class WorkoutHistory(
     val date: String,
     val title: String,
     val exercises: List<ExerciseHistory>,
-    val duration: Int
+    val duration: String
 )
 
 data class ExerciseHistory(
     val name: String,
-    val sets: List<WorkoutSet>
+    val sets: Int
 )
 
 data class WorkoutSet(
@@ -52,44 +52,52 @@ class WorkoutHistoryAdapter(private val workouts: List<WorkoutHistory>) :
         // Clear previous views
         holder.exerciseContainer.removeAllViews()
 
-        // Add exercises dynamically
-        workout.exercises.forEach { exercise ->
-            val exerciseTitle = TextView(holder.itemView.context).apply {
-                text = exercise.name
-                textSize = 16f
-                setTypeface(typeface, Typeface.BOLD)
-                setPadding(0, 8, 0, 4)
-            }
-            holder.exerciseContainer.addView(exerciseTitle)
+        // Group exercises by name and count occurrences
+        val exerciseMap = workout.exercises.groupBy { it.name }
 
-            val flexboxLayout = FlexboxLayout(holder.itemView.context).apply {
+        // Add exercises dynamically
+        exerciseMap.forEach { (name, exercises) ->
+            // Create a new LinearLayout to hold the exercise name and sets
+            val exerciseLayout = LinearLayout(holder.itemView.context).apply {
+                orientation = LinearLayout.HORIZONTAL
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
-                flexWrap = FlexWrap.WRAP
+                gravity = android.view.Gravity.CENTER_VERTICAL
             }
 
-            exercise.sets.forEach { set ->
+            // Add exercise title on the left
+            val exerciseTitle = TextView(holder.itemView.context).apply {
+                text = name
+                textSize = 16f
+                setTypeface(typeface, Typeface.BOLD)
+                setPadding(0, 8, 0, 4)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) // Take up available space
+            }
+            exerciseLayout.addView(exerciseTitle)
+
+            // Add sets on the right
+            exercises.forEach { exerciseHistory ->
                 val setTextView = TextView(holder.itemView.context).apply {
-                    text = "${set.weight}kg × ${set.reps}"
+                    text = "${exerciseHistory.sets} sets"
                     textSize = 14f
                     setBackgroundResource(R.drawable.set_background)
                     setPadding(16, 8, 16, 8)
-                    layoutParams = ViewGroup.MarginLayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        setMargins(8, 8, 8, 8)
-                    }
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
                 }
-                flexboxLayout.addView(setTextView)
+                exerciseLayout.addView(setTextView)
             }
 
-            holder.exerciseContainer.addView(flexboxLayout)
+            // Add the exercise layout to the container
+            holder.exerciseContainer.addView(exerciseLayout)
         }
     }
 
     override fun getItemCount(): Int = workouts.size
 }
+
 

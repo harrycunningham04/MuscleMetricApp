@@ -98,20 +98,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Add Exercise Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/addExerciseButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Add Exercise"
-                android:textAllCaps="false"
-                android:textSize="16sp"
-                android:drawableStart="@drawable/ic_add"
-                android:padding="8dp"
-                android:backgroundTint="#5CB85C"
-                android:textColor="@android:color/white"
-                android:layout_marginBottom="8dp"/>
-
             <!-- Complete Workout Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/completeWorkoutButton"

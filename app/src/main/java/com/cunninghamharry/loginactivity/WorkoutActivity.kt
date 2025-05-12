@@ -40,7 +40,6 @@ class WorkoutActivity : AppCompatActivity() {
             intent.getParcelableArrayListExtra<Exercise>("exercises")?.toMutableList() ?: mutableListOf()
         }
 
-        val addExerciseButton: Button = findViewById(R.id.addExerciseButton)
         val completeWorkoutButton: Button = findViewById(R.id.completeWorkoutButton)
         val backButton = findViewById<ImageView>(R.id.backButton)
 
@@ -69,11 +68,6 @@ class WorkoutActivity : AppCompatActivity() {
         }
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = exerciseAdapter
-
-        addExerciseButton.setOnClickListener {
-            val intent = Intent(this, ExerciseSearchActivity::class.java)
-            startActivityForResult(intent, REQUEST_CODE)
-        }
 
         completeWorkoutButton.setOnClickListener {
             stopTimer() // Stop and log workout
