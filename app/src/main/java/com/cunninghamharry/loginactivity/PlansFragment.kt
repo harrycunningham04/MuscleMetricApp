@@ -21,7 +21,7 @@ import org.json.JSONObject
 data class Workout(
     val id: Int,
     val title: String,
-    val exercises: List<Exercise>,
+    val exercises: List<Exercise> = emptyList(),
     val isCompleted: Boolean
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
@@ -136,7 +136,15 @@ class PlansFragment : Fragment() {
             { response ->
                 try {
                     val workoutsArray = response.getJSONArray("workouts")
-                    val parsedWorkouts = parsePlans(workoutsArray)
+                    val exercisesArray = response.getJSONArray("exercises")
+
+                    val parsedExercises = parseAllExercises(exercisesArray)
+
+                    // Group exercises by WorkoutId
+                    val exercisesByWorkoutId = parsedExercises.groupBy { it.first }
+
+                    val parsedWorkouts = parseWorkoutsWithExercises(workoutsArray, exercisesByWorkoutId)
+
                     workouts.clear()
                     workouts.addAll(parsedWorkouts)
                     adapter.notifyDataSetChanged()
@@ -154,66 +162,53 @@ class PlansFragment : Fragment() {
         requestQueue.add(request)
     }
 
-    fun parsePlans(workoutsArray: JSONArray): List<Workout> {
-        val workouts = mutableListOf<Workout>()
-        try {
-            for (i in 0 until workoutsArray.length()) {
-                val workoutObject = workoutsArray.getJSONObject(i) // Access the objects in the array
+    fun parseAllExercises(exercisesArray: JSONArray): List<Pair<Int, Exercise>> {
+        val exercises = mutableListOf<Pair<Int, Exercise>>()
+        for (i in 0 until exercisesArray.length()) {
+            val exerciseObject = exercisesArray.getJSONObject(i)
 
-                val workout = Workout(
-                    id = workoutObject.getInt("id"),
-                    title = workoutObject.getString("Name"),
-                    exercises = parseExercises(workoutObject),
-                    isCompleted = workoutObject.optInt("Completed", 0) == 1
-                )
+            val workoutId = exerciseObject.getInt("WorkoutId")
+            val setsCount = exerciseObject.getInt("Sets")  // Get the number of sets
+            val reps = exerciseObject.optInt("Reps", 0)  // Get the reps value
+            val weight = exerciseObject.optString("Weight", "0.0").toDoubleOrNull() ?: 0.0  // Get the weight value
 
-                workouts.add(workout)
+            val sets = mutableListOf<SetModel>()
+            // Add the same set for each repetition based on the "Sets" value
+            for (i in 0 until setsCount) {
+                sets.add(SetModel(weight = weight, reps = reps))
             }
-        } catch (e: JSONException) {
-            e.printStackTrace()
-        }
-        return workouts
-    }
 
-    fun parseExercises(workoutObject: JSONObject): List<Exercise> {
-        val exercises = mutableListOf<Exercise>()
-        try {
-            val exercisesArray = workoutObject.optJSONArray("exercises") ?: JSONArray()
-            for (k in 0 until exercisesArray.length()) {
-                val exerciseObject = exercisesArray.getJSONObject(k)
+            val exercise = Exercise(
+                name = exerciseObject.getString("Name"),
+                sets = sets  // Add the created sets list
+            )
 
-                val exercise = Exercise(
-                    name = exerciseObject.getString("Name"),
-                    sets = parseSets(exerciseObject)
-                )
-
-                exercises.add(exercise)
-            }
-        } catch (e: JSONException) {
-            e.printStackTrace()
+            exercises.add(Pair(workoutId, exercise))
         }
         return exercises
     }
 
-    fun parseSets(exerciseObject: JSONObject): MutableList<SetModel> {
-        val sets = mutableListOf<SetModel>()
-        try {
-            val setsArray = exerciseObject.optJSONArray("sets") ?: JSONArray()
-            for (l in 0 until setsArray.length()) {
-                val setObject = setsArray.getJSONObject(l)
 
-                val set = SetModel(
-                    weight = setObject.getDouble("weight"),
-                    reps = setObject.getInt("reps")
-                )
+    fun parseWorkoutsWithExercises(
+        workoutsArray: JSONArray,
+        exercisesByWorkoutId: Map<Int, List<Pair<Int, Exercise>>>
+    ): List<Workout> {
+        val workouts = mutableListOf<Workout>()
+        for (i in 0 until workoutsArray.length()) {
+            val workoutObject = workoutsArray.getJSONObject(i)
 
-                sets.add(set)
-            }
-        } catch (e: JSONException) {
-            e.printStackTrace()
+            val workoutId = workoutObject.getInt("id")
+            val workoutExercises = exercisesByWorkoutId[workoutId]?.map { it.second } ?: emptyList()
+
+            val workout = Workout(
+                id = workoutId,
+                title = workoutObject.getString("Name"),
+                exercises = workoutExercises,
+                isCompleted = workoutObject.optInt("Completed", 0) == 1
+            )
+
+            workouts.add(workout)
         }
-        return sets
+        return workouts
     }
-
-
 }

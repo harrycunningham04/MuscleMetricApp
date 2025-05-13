@@ -1,5 +1,6 @@
 package com.cunninghamharry.loginactivity
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,38 +26,47 @@ class WorkoutAdapter(private var workouts: List<Workout>, private val onClick: (
     }
 
     fun updateWorkouts(newWorkouts: List<Workout>) {
+        Log.d("WorkoutAdapter", "Updating workouts: received ${newWorkouts.size} workouts")
         this.workouts = newWorkouts
         notifyDataSetChanged()
     }
 
     override fun onBindViewHolder(holder: WorkoutViewHolder, position: Int) {
         val workout = workouts[position]
+        Log.d("WorkoutAdapter", "Binding workout at position $position: ${workout.title}")
 
         holder.title.text = workout.title
 
-        // Clear previous views to prevent duplication
+        val exerciseNames = workout.exercises.map { it.name }
+        Log.d("WorkoutAdapter", "Workout '${workout.title}' has ${exerciseNames.size} exercises: $exerciseNames")
+        holder.description.text = exerciseNames.joinToString(" • ")
+
         holder.exerciseContainer.removeAllViews()
 
-        workout.exercises.forEach { exercise ->
+        workout.exercises.forEachIndexed { index, exercise ->
+            Log.d("WorkoutAdapter", "Exercise #$index: ${exercise.name}, sets: ${exercise.sets.size}")
+
             val row = LinearLayout(holder.itemView.context).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
-                setPadding(0, 8, 0, 8) // Add spacing between exercises
+                setPadding(0, 8, 0, 8)
             }
 
             val exerciseName = TextView(holder.itemView.context).apply {
                 text = exercise.name
                 textSize = 16f
-                setTypeface(null, android.graphics.Typeface.BOLD) // Bold for the name
+                setTypeface(null, android.graphics.Typeface.BOLD)
                 layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             }
 
             val totalSets = exercise.sets.size
             val reps = exercise.sets.firstOrNull()?.reps ?: 0
             val lastWeight = exercise.sets.lastOrNull()?.weight ?: 0.0
+
+            Log.d("WorkoutAdapter", "Exercise '${exercise.name}': $totalSets sets × $reps reps, last weight = $lastWeight")
 
             val exerciseDetails = TextView(holder.itemView.context).apply {
                 text = "$totalSets sets × $reps reps, Last weight: $lastWeight kg"
@@ -80,10 +90,15 @@ class WorkoutAdapter(private var workouts: List<Workout>, private val onClick: (
             holder.itemView.setBackgroundColor(ContextCompat.getColor(holder.itemView.context, R.color.default_background))
             holder.button.text = "Start Workout"
             holder.button.isEnabled = true
-            holder.button.setOnClickListener { onClick(workout) }
+            holder.button.setOnClickListener {
+                Log.d("WorkoutAdapter", "Workout '${workout.title}' clicked")
+                onClick(workout)
+            }
         }
     }
 
-
-    override fun getItemCount() = workouts.size
+    override fun getItemCount(): Int {
+        Log.d("WorkoutAdapter", "Adapter item count: ${workouts.size}")
+        return workouts.size
+    }
 }
