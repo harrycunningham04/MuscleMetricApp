@@ -45,9 +45,15 @@ class HomePage : AppCompatActivity() {
 
         // Handle logout button click
         btnLogout.setOnClickListener {
+            // Clear user_id from SharedPreferences
+            val sharedPreferences = getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
+            sharedPreferences.edit().remove("user_id").apply()
+
+            // Navigate to .MainActivity and clear the back stack
             val intent = Intent(this@HomePage, MainActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK // Clears back stack
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
         }
+
     }
 }

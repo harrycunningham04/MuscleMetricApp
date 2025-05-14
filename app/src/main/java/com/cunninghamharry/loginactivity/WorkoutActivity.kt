@@ -13,6 +13,12 @@ import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.*
 import android.os.Build
+import android.util.Log
+import com.android.volley.Response
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
+import org.json.JSONArray
+import org.json.JSONObject
 
 private const val REQUEST_CODE = 1
 
@@ -106,7 +112,7 @@ class WorkoutActivity : AppCompatActivity() {
             val seconds = (elapsedTime / 1000) % 60
             val duration = String.format("%02d:%02d", minutes, seconds)
 
-            logWorkout(duration) // Save workout log
+            logWorkout(duration)
         }
     }
 
@@ -118,17 +124,92 @@ class WorkoutActivity : AppCompatActivity() {
         workoutLog.append("Duration: $duration\n")
         workoutLog.append("Exercises:\n")
 
+        val workoutData = JSONObject()
+        workoutData.put("workoutName", findViewById<TextView>(R.id.workoutTitle).text.toString())
+        workoutData.put("date", findViewById<TextView>(R.id.dateText).text.toString())
+        workoutData.put("duration", duration)
+
+        val exercisesArray = JSONArray()
         for (exercise in exercises) {
             workoutLog.append("  - ${exercise.name}:\n")
+
+            val exerciseJson = JSONObject()
+            exerciseJson.put("exerciseName", exercise.name)
+
+            val setsArray = JSONArray()
             for ((index, set) in exercise.sets.withIndex()) {
                 workoutLog.append("    Set ${index + 1}: ${set.weight} kg x ${set.reps} reps\n")
+
+                val setJson = JSONObject()
+                setJson.put("weight", set.weight)
+                setJson.put("reps", set.reps)
+                setsArray.put(setJson)
             }
+
+            exerciseJson.put("sets", setsArray)
+            exercisesArray.put(exerciseJson)
         }
 
-        // Save the log (this could be to a database, file, or shared preferences)
-        println(workoutLog.toString()) // Replace with actual logging mechanism
-        finish() // Exit workout screen
+        workoutData.put("exercises", exercisesArray)
+
+        // Send Workout History to Backend (Section 1)
+        sendWorkoutHistoryToBackend(workoutData)
+
+        // Prepare data for set history (Section 2)
+        val setHistoryData = JSONObject()
+        setHistoryData.put("workoutName", findViewById<TextView>(R.id.workoutTitle).text.toString())
+        setHistoryData.put("exercises", exercisesArray)
+
+        // Send Set History to Backend (Section 2)
+        sendSetHistoryToBackend(setHistoryData)
+
+        // Here you can also call similar methods for other sections like Section 3 (user facts), Section 4 (update user statistics), etc.
+        // For now, just finishing the activity for this example.
+        finish()
     }
+
+    private fun sendWorkoutHistoryToBackend(workoutData: JSONObject) {
+        val url = "https://hc920.brighton.domains/muscleMetric/php/workout/write/section1.php" // Adjust the URL
+
+        val jsonObjectRequest = object : JsonObjectRequest(
+            Method.POST, url, workoutData,
+            Response.Listener { response ->
+                // Handle the response from the server
+                Log.d("WorkoutActivity", "Workout history saved: $response")
+            },
+            Response.ErrorListener { error ->
+                // Handle any error
+                Log.e("WorkoutActivity", "Error saving workout history: ${error.message}")
+            }
+        ) {
+            // You can override getHeaders() here if needed, for example to add authentication
+        }
+
+        val requestQueue = Volley.newRequestQueue(this)
+        requestQueue.add(jsonObjectRequest)
+    }
+
+    private fun sendSetHistoryToBackend(setData: JSONObject) {
+        val url = "https://hc920.brighton.domains/muscleMetric/php/workout/write/section2.phpdi" // Adjust the URL
+
+        val jsonObjectRequest = object : JsonObjectRequest(
+            Method.POST, url, setData,
+            Response.Listener { response ->
+                // Handle the response from the server
+                Log.d("WorkoutActivity", "Set history saved: $response")
+            },
+            Response.ErrorListener { error ->
+                // Handle any error
+                Log.e("WorkoutActivity", "Error saving set history: ${error.message}")
+            }
+        ) {
+            // Add any headers, if necessary
+        }
+
+        val requestQueue = Volley.newRequestQueue(this)
+        requestQueue.add(jsonObjectRequest)
+    }
+
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)

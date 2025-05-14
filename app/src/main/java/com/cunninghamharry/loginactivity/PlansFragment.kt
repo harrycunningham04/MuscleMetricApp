@@ -4,10 +4,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -128,7 +130,13 @@ class PlansFragment : Fragment() {
     }
 
     private fun fetchPlans() {
-        val url = "https://hc920.brighton.domains/muscleMetric/php/workout/workout.php?user_id=4"
+        // Get user_id from SharedPreferences
+        val sharedPreferences = requireContext().getSharedPreferences("MyAppPrefs", AppCompatActivity.MODE_PRIVATE)
+        val userId = sharedPreferences.getInt("user_id", -1)
+
+        Log.d("PlansFragment", "Fetched user_id = $userId")
+
+        val url = "https://hc920.brighton.domains/muscleMetric/php/workout/workout.php?user_id=$userId"
         val requestQueue = Volley.newRequestQueue(requireContext())
 
         val request = JsonObjectRequest(
