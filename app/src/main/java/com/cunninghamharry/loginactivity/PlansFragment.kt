@@ -48,23 +48,19 @@ data class Workout(
     }
 }
 
-
-data class Plan(
-    val id: Int,
-    val title: String,
-    val workouts: List<Workout>
-)
-
 data class Exercise(
+    val id: Int = -1,
     val name: String,
     val sets: MutableList<SetModel>
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
+        parcel.readInt(),
         parcel.readString() ?: "",
         parcel.createTypedArrayList(SetModel) ?: mutableListOf()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeInt(id)
         parcel.writeString(name)
         parcel.writeTypedList(sets)
     }
@@ -117,11 +113,13 @@ class PlansFragment : Fragment() {
 
         adapter = WorkoutAdapter(workouts) { workout ->
             val intent = Intent(context, WorkoutActivity::class.java).apply {
+                putExtra("workout_id", workout.id)
                 putExtra("workout_name", workout.title)
                 putParcelableArrayListExtra("exercises", ArrayList(workout.exercises))
             }
             startActivity(intent)
         }
+
         recyclerView.adapter = adapter
 
         fetchPlans()
@@ -176,6 +174,7 @@ class PlansFragment : Fragment() {
             val exerciseObject = exercisesArray.getJSONObject(i)
 
             val workoutId = exerciseObject.getInt("WorkoutId")
+            val exerciseId = exerciseObject.getInt("ExerciseId")  // Extract ExerciseId
             val setsCount = exerciseObject.getInt("Sets")  // Get the number of sets
             val reps = exerciseObject.optInt("Reps", 0)  // Get the reps value
             val weight = exerciseObject.optString("Weight", "0.0").toDoubleOrNull() ?: 0.0  // Get the weight value
@@ -187,6 +186,7 @@ class PlansFragment : Fragment() {
             }
 
             val exercise = Exercise(
+                id = exerciseId,  // Set ExerciseId
                 name = exerciseObject.getString("Name"),
                 sets = sets  // Add the created sets list
             )
@@ -195,6 +195,7 @@ class PlansFragment : Fragment() {
         }
         return exercises
     }
+
 
 
     fun parseWorkoutsWithExercises(
