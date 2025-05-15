@@ -79,8 +79,11 @@ class WorkoutActivity : AppCompatActivity() {
         recyclerView.adapter = exerciseAdapter
 
         completeWorkoutButton.setOnClickListener {
-            stopTimer() // Stop and log workout
+            stopTimer()
+            completeWorkoutButton.isEnabled = false
+            finish()
         }
+
     }
 
     // Start Timer
@@ -111,13 +114,18 @@ class WorkoutActivity : AppCompatActivity() {
             isTimerRunning = false
 
             val elapsedTime = System.currentTimeMillis() - workoutStartTime
-            val minutes = (elapsedTime / 1000) / 60
+
+            val hours = (elapsedTime / 1000) / 3600
+            val minutes = ((elapsedTime / 1000) % 3600) / 60
             val seconds = (elapsedTime / 1000) % 60
-            val duration = String.format("%02d:%02d", minutes, seconds)
+
+            // Format the duration in HH:MM:SS
+            val duration = String.format("%02d:%02d:%02d", hours, minutes, seconds)
 
             logWorkout(duration)
         }
     }
+
 
     private fun logWorkout(duration: String) {
         // Build the workout log to be displayed (for debugging or review)
@@ -246,31 +254,55 @@ class WorkoutActivity : AppCompatActivity() {
         requestQueue.add(jsonObjectRequest)
     }
 
+    fun calculateNewAverageSeconds(
+        oldAvgTimeStr: String,
+        workoutCountBefore: Int,
+        newWorkoutSeconds: Int
+    ): Int {
+        val oldSeconds = convertTimeStringToSeconds(oldAvgTimeStr)
+        val totalSeconds = (oldSeconds * workoutCountBefore + newWorkoutSeconds) / (workoutCountBefore + 1)
+        return totalSeconds
+    }
+
+    fun convertTimeStringToSeconds(time: String): Int {
+        val parts = time.split(":").map { it.toIntOrNull() ?: 0 }
+        return when (parts.size) {
+            3 -> parts[0] * 3600 + parts[1] * 60 + parts[2] // HH:MM:SS
+            2 -> parts[0] * 60 + parts[1]                  // MM:SS
+            1 -> parts[0]                                   // SS
+            else -> 0
+        }
+    }
+
+    fun convertSecondsToTimeString(seconds: Int): String {
+        val h = (seconds / 3600).toString().padStart(2, '0')
+        val m = ((seconds % 3600) / 60).toString().padStart(2, '0')
+        val s = (seconds % 60).toString().padStart(2, '0')
+        return "$h:$m:$s"
+    }
 
     private fun sendSetHistoryToBackend(workoutHistoryId: Int, duration: String) {
-        val exercisesArray = JSONArray()
+        val flatSetsArray = JSONArray()
+
         for (exercise in exercises) {
-            val exerciseJson = JSONObject()
-            exerciseJson.put("exerciseName", exercise.name)
-
-            val setsArray = JSONArray()
             for ((index, set) in exercise.sets.withIndex()) {
-                val setJson = JSONObject()
-                setJson.put("ExerciseId", exercise.id)
-                setJson.put("SetNumber", index + 1)
-                setJson.put("Reps", set.reps)
-                setJson.put("Weight", set.weight)
-                setsArray.put(setJson)
+                val setJson = JSONObject().apply {
+                    put("ExerciseId", exercise.id)
+                    put("SetNumber", index + 1)
+                    put("Reps", set.reps)
+                    put("Weight", set.weight)
+                }
+                flatSetsArray.put(setJson)
             }
-
-            exerciseJson.put("sets", setsArray)
-            exercisesArray.put(exerciseJson)
         }
 
         val setHistoryData = JSONObject().apply {
-            put("historyId", workoutHistoryId)
-            put("sets", exercisesArray)
+            put("historyId", workoutHistoryId)  // The workout history ID
+            put("sets", flatSetsArray)           // The array of sets
         }
+
+        // Log the data being sent
+        Log.d("WorkoutActivity", "Sending data to backend: ${setHistoryData.toString()}")
 
         val url = "https://hc920.brighton.domains/muscleMetric/php/workout/write/section2.php"
         val jsonObjectRequest = object : JsonObjectRequest(
@@ -289,7 +321,8 @@ class WorkoutActivity : AppCompatActivity() {
 
         Volley.newRequestQueue(this).add(jsonObjectRequest)
 
-        // ➕ Facts update logic
+
+    // ➕ Facts update logic (unchanged)
         val sharedPreferences = getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
         val userId = sharedPreferences.getInt("user_id", -1)
 
@@ -303,14 +336,20 @@ class WorkoutActivity : AppCompatActivity() {
                 }
             }
 
-            val newAvgTime = duration.toDoubleOrNull() ?: 0.0
-
             getFactsData { success, workouts, sets, weight, avgTime ->
                 if (success) {
                     val updatedWorkouts = workouts + 1
                     val updatedSets = sets + newSets
                     val updatedWeight = weight + newWeight
-                    val updatedAvgTime = newAvgTime
+
+                    // Convert current workout duration (String format like "MM:SS") to seconds
+                    val newWorkoutSeconds = convertTimeStringToSeconds(duration)
+
+                    // Calculate the new average time in seconds
+                    val newAvgSeconds = calculateNewAverageSeconds(avgTime.toString(), workouts, newWorkoutSeconds)
+
+                    // Convert back to "HH:MM:SS" format
+                    val updatedAvgTime = convertSecondsToTimeString(newAvgSeconds)
 
                     sendFactsToSection4(userId, updatedWorkouts, updatedSets, updatedWeight, updatedAvgTime)
                 }
@@ -319,13 +358,14 @@ class WorkoutActivity : AppCompatActivity() {
     }
 
 
-    private fun getFactsData(onResult: (Boolean, Int, Int, Int, Double) -> Unit) {
+
+    private fun getFactsData(onResult: (Boolean, Int, Int, Int, String) -> Unit) {
         val sharedPreferences = getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
         val userId = sharedPreferences.getInt("user_id", -1)
 
         if (userId == -1) {
             Log.e("PlansFragment", "❌ Invalid user ID")
-            onResult(false, 0, 0, 0, 0.0)
+            onResult(false, 0, 0, 0, "0.0")
             return
         }
 
@@ -347,7 +387,7 @@ class WorkoutActivity : AppCompatActivity() {
                         val workoutsComplete = data.getInt("WorkoutsComplete")
                         val setsCompleted = data.getInt("SetsCompleted")
                         val totalWeight = data.getInt("TotalWeight")
-                        val avgWorkoutTime = data.getDouble("AvgWorkoutTime")
+                        val avgWorkoutTime = data.getString("AvgWorkoutTime")
 
                         Log.d("Section3", "✅ Workouts=$workoutsComplete Sets=$setsCompleted Weight=$totalWeight AvgTime=$avgWorkoutTime")
 
@@ -355,18 +395,18 @@ class WorkoutActivity : AppCompatActivity() {
                         onResult(true, workoutsComplete, setsCompleted, totalWeight, avgWorkoutTime)
                     } else {
                         Log.e("Section3", "❌ Failed to get facts: ${response.optString("error")}")
-                        onResult(false, 0, 0, 0, 0.0)
+                        onResult(false, 0, 0, 0, "0.0")
                     }
                 } catch (e: Exception) {
                     Log.e("Section3", "❌ JSON parse error: ${e.message}")
                     e.printStackTrace()
-                    onResult(false, 0, 0, 0, 0.0)
+                    onResult(false, 0, 0, 0, "0.0")
                 }
             },
             Response.ErrorListener { error ->
                 Log.e("Section3", "❌ Network error: ${error.message}")
                 error.printStackTrace()
-                onResult(false, 0, 0, 0, 0.0)
+                onResult(false, 0, 0, 0, "0.0")
             }
         ) {
             override fun getHeaders(): MutableMap<String, String> {
@@ -383,7 +423,7 @@ class WorkoutActivity : AppCompatActivity() {
         workoutsComplete: Int,
         setsCompleted: Int,
         totalWeight: Double,
-        avgWorkoutTime: Double
+        avgWorkoutTime: String
     ) {
         val url = "https://hc920.brighton.domains/muscleMetric/php/workout/write/section4.php"
 
